@@ -30,7 +30,7 @@ Ce script a les dépendances suivantes :
 - Python 3.x
 - Les utilitaires système `file` et `ent` doivent être disponibles dans votre système.
 
-sudo apt install ent -y
+`sudo apt install ent -y`
 
 Assurez-vous d'installer ces dépendances avant d'exécuter le script.
 
