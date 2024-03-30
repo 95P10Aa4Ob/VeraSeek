@@ -36,6 +36,7 @@ def find_specific_files(directory):
 def main(directory):
     console = Console()
     Taggué_files = []
+    HighEntropy_files = []
     file_count = sum(len(files) for _, _, files in os.walk(directory))
 
     with Progress(
@@ -59,17 +60,26 @@ def main(directory):
                 entropy = calculate_entropy(file_path)
                 if entropy is not None and entropy >= 7.9999:
                     entropy_mark = "Taggué"
+                    HighEntropy_files.append(file_path)
                 else:
                     entropy_mark = "Non taggué"
+                    if size_mark == "Taggué" and entropy_mark == "Non taggué" and "Unknown" not in file_type:
+                        Taggué_files.append(file_path)
                 if size_mark == "Taggué" and entropy_mark == "Taggué" and "Unknown" not in file_type:
                     Taggué_files.append(file_path)
-                console.print(f"File: {file_path}, Size Mark: [green]{size_mark}[/green], File Type: [green]{file_type}[/green], Entropy: {entropy}, Entropy Mark: [green]{entropy_mark}[/green]")
+                console.print(f"Fichier : {file_path}, Taille : {size_mark}, Type de fichier : {file_type}, Entropy : {entropy} : {entropy_mark}")
                 progress.update(task, advance=1)
-    
+    print("-----------------------------------------------------------------------------------------------------------")
     console.print("\nFichiers remplissant tous les critères :")
     for file in Taggué_files:
         console.print(file)
-
+    print("")
+    print("-----------------------------------------------------------------------------------------------------------")
+    console.print("\nFichiers avec une entropie élevée (>= 7.9999) :")
+    for file in HighEntropy_files:
+        console.print(file)
+    print("")
+    print("-----------------------------------------------------------------------------------------------------------\n\n")
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some files.")
     parser.add_argument("--dossier", help="Chemin du dossier à analyser")
