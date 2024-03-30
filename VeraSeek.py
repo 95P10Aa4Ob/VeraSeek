@@ -22,20 +22,20 @@ def identify_file_type(file_path):
 
 def find_specific_files(directory):
     specific_files = []
-    for filename in os.listdir(directory):
-        file_path = os.path.join(directory, filename)
-        if os.path.isfile(file_path):
+    for root, dirs, files in os.walk(directory):
+        for filename in files:
+            file_path = os.path.join(root, filename)
             file_size = os.path.getsize(file_path)
             file_type = identify_file_type(file_path)
             if (file_size < 3 * 1024 and file_type == "application/octet-stream") or (file_size < 2 * 1024 and os.path.splitext(filename)[1] == ""):
-                specific_files.append(filename)
+                specific_files.append(file_path)
     return specific_files
 
 def main(directory):
     marked_files = []
-    for filename in os.listdir(directory):
-        file_path = os.path.join(directory, filename)
-        if os.path.isfile(file_path):
+    for root, dirs, files in os.walk(directory):
+        for filename in files:
+            file_path = os.path.join(root, filename)
             file_size = os.path.getsize(file_path)
             if file_size % 512 == 0:
                 size_mark = "Marked"
@@ -48,15 +48,16 @@ def main(directory):
             else:
                 entropy_mark = "Not Marked"
             if size_mark == "Marked" and entropy_mark == "Marked" and "Unknown" not in file_type:
-                marked_files.append(filename)
-            print(f"File: {filename}, Size Mark: {size_mark}, File Type: {file_type}, Entropy: {entropy}, Entropy Mark: {entropy_mark}")
+                marked_files.append(file_path)
+            print(f"File: {file_path}, Size Mark: {size_mark}, File Type: {file_type}, Entropy: {entropy}, Entropy Mark: {entropy_mark}")
     print("\nFiles Meeting all Criteria:")
     for file in marked_files:
         print(file)
-    print("\nSpecific Files (Size < 3ko and Type: application/octet-stream or Size < 2ko and no extension):")
-    specific_files = find_specific_files(directory)
-    for file in specific_files:
-        print(file)
+
+    #print("\nSpecific Files (Size < 3ko and Type: application/octet-stream or Size < 2ko and no extension):")
+    #specific_files = find_specific_files(directory)
+    #for file in specific_files:
+     #   print(file)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some files.")
@@ -65,4 +66,4 @@ if __name__ == "__main__":
     if args.dossier:
         main(args.dossier)
     else:
-        print("Veuillez spécifier le chemin du dossier avec l'option --dossier.")
+        print("Veuillez spécifier le chemin du dossier avec l'option --dossier 'chemin'.")
