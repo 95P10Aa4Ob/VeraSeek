@@ -2,8 +2,11 @@ import os
 import subprocess
 import argparse
 import re
-from rich.progress import Progress, BarColumn, TimeRemainingColumn
+from rich.progress import Progress, BarColumn
+import time
+import datetime
 from rich.console import Console
+
 
 def calculate_entropy(file_path):
     command = ["ent", "-c", file_path]
@@ -22,32 +25,19 @@ def identify_file_type(file_path):
         return result.stdout.strip()
     return "Unknown"
 
-def find_specific_files(directory):
-    specific_files = []
-    for root, dirs, files in os.walk(directory):
-        for filename in files:
-            file_path = os.path.join(root, filename)
-            file_size = os.path.getsize(file_path)
-            file_type = identify_file_type(file_path)
-            if (file_size < 3 * 1024 and file_type == "application/octet-stream") or (file_size < 2 * 1024 and os.path.splitext(filename)[1] == ""):
-                specific_files.append(file_path)
-    return specific_files
+def format_time(seconds):
+    return str(datetime.timedelta(seconds=int(seconds)))
 
 def main(directory):
     console = Console()
     Taggué_files = []
-    HighEntropy_files = []
-    file_count = sum(len(files) for _, _, files in os.walk(directory))
-
-    with Progress(
-        "[progress.description]{task.description}",
-        BarColumn(),
-        "[progress.percentage]{task.percentage:>3.0f}%",
-        TimeRemainingColumn(),
-        transient=True,
-        console=console
-    ) as progress:
-        task = progress.add_task("[cyan]Processing...", total=file_count)
+    High_entropy_files = []
+    
+    with Progress("[progress.description]{task.description}", BarColumn(), transient=True) as progress:
+        task = progress.add_task("[cyan]🔍 Analyse des fichiers...", total=None)
+        start_time = time.time()
+        total_files = sum(len(files) for _, _, files in os.walk(directory))
+        completed_files = 0
         for root, dirs, files in os.walk(directory):
             for filename in files:
                 file_path = os.path.join(root, filename)
@@ -60,26 +50,23 @@ def main(directory):
                 entropy = calculate_entropy(file_path)
                 if entropy is not None and entropy >= 7.9999:
                     entropy_mark = "Taggué"
-                    HighEntropy_files.append(file_path)
+                    High_entropy_files.append(file_path)
                 else:
                     entropy_mark = "Non taggué"
-                    if size_mark == "Taggué" and entropy_mark == "Non taggué" and "Unknown" not in file_type:
-                        Taggué_files.append(file_path)
                 if size_mark == "Taggué" and entropy_mark == "Taggué" and "Unknown" not in file_type:
                     Taggué_files.append(file_path)
-                console.print(f"Fichier : {file_path}, Taille : {size_mark}, Type de fichier : {file_type}, Entropy : {entropy} : {entropy_mark}")
-                progress.update(task, advance=1)
-    print("-----------------------------------------------------------------------------------------------------------")
-    console.print("\nFichiers remplissant tous les critères :")
+                completed_files += 1
+                progress.update(task, advance=1, description=f"⌛ ETA: {format_time((time.time() - start_time) * (total_files - completed_files) / completed_files)} - {completed_files}/{total_files} ({completed_files * 100 / total_files:.2f}%) 🦄🦄🦄🦄 ")
+        progress.console.print("\n\n[cyan]✅ Analyse des fichiers [bold]finie !")
+    
+    console.print("\n[b] ➡️ Fichiers remplissant tous les critères :[/b]")
     for file in Taggué_files:
-        console.print(file)
-    print("")
-    print("-----------------------------------------------------------------------------------------------------------")
-    console.print("\nFichiers avec une entropie élevée (>= 7.9999) :")
-    for file in HighEntropy_files:
-        console.print(file)
-    print("")
-    print("-----------------------------------------------------------------------------------------------------------\n\n")
+        console.print(f"[yellow]➔ {file}\n\n")
+
+    console.print("\n[b] ➡️ Fichiers avec une entropie de 7.9999 ou plus :[/b]")
+    for file in High_entropy_files:
+        console.print(f"[yellow]➔ {file}\n\n")
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some files.")
     parser.add_argument("--dossier", help="Chemin du dossier à analyser")
